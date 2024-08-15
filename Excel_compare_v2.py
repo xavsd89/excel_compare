@@ -5,13 +5,6 @@ from openpyxl.styles import PatternFill
 import streamlit as st
 from pathlib import Path
 
-# Define directories (for Streamlit, we'll use a file uploader)
-source_files_folder = Path('source_files')
-target_files_folder = Path('target_files')
-pass_output_folder = Path('pass_output')
-fail_output_folder = Path('fail_output')
-
-# Define the highlighting function
 def highlight_col(file_path):
     wb = load_workbook(file_path)
     ws_diff = wb['Differences']
@@ -29,33 +22,27 @@ def highlight_col(file_path):
 
     wb.save(file_path)
 
-# Streamlit app main logic
 def main():
-    st.title('Excel Compare V3')
+    st.title('Logistics Data Comparison Tool')
 
     uploaded_source_file = st.file_uploader("Upload Source File", type=['xlsx'])
     uploaded_target_file = st.file_uploader("Upload Target File", type=['xlsx'])
 
     if uploaded_source_file and uploaded_target_file:
         try:
-            # Read data into DataFrames
             source_file = pd.read_excel(uploaded_source_file)
             target_file = pd.read_excel(uploaded_target_file)
 
-            # Convert all columns to strings and strip whitespace
             source_file = source_file.applymap(lambda x: str(x).strip() if isinstance(x, str) else x)
             target_file = target_file.applymap(lambda x: str(x).strip() if isinstance(x, str) else x)
 
-            # Merge dataframes to find differences
             diff = source_file.merge(target_file, indicator=True, how='outer')
             diff['_merge'].replace({'left_only': 'Source Only', 'right_only': 'Target Only'}, inplace=True)
             diff.rename(columns={'_merge': 'Merge_Output'}, inplace=True)
             diff = diff[diff['Merge_Output'] != 'both']
 
-            # Define output file paths
             diff_file_path = 'diff_output.xlsx'
 
-            # Write to files
             if not diff.empty:
                 with pd.ExcelWriter(diff_file_path) as writer:
                     source_file.to_excel(writer, sheet_name='Source', index=False)
@@ -71,8 +58,7 @@ def main():
                     source_file.to_excel(writer, sheet_name='Source', index=False)
                     target_file.to_excel(writer, sheet_name='Target', index=False)
                     pd.DataFrame(columns=source_file.columns).to_excel(writer, sheet_name='Differences', index=False)
-                    worksheet = writer.sheets['Differences']
-                    worksheet.write(0, 0, "No difference found between source and target files.")
+                    writer.sheets['Differences'].write(0, 0, "No difference found between source and target files.")
                 st.write("No differences found.")
                 with open(diff_file_path, "rb") as f:
                     st.download_button("Download Differences File", f, file_name="diff_output.xlsx")
