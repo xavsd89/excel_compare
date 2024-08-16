@@ -24,17 +24,6 @@ def highlight_col(file_path):
 
 def main():
     st.title('Excel Comparision Tool')
-    st.markdown(
-            """
-            <style>
-            .css-1jc7ptx, .e1ewe7hr3, .viewerBadge_container__1QSob,
-            .styles_viewerBadge__1yB5_, .viewerBadge_link__1S137,
-            .viewerBadge_text__1JaDK {
-                display: none;
-            }
-            </style>
-            """,
-            unsafe_allow_html=True) 
 
     uploaded_source_file = st.file_uploader("Upload Source File", type=['xlsx'])
     uploaded_target_file = st.file_uploader("Upload Target File", type=['xlsx'])
