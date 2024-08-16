@@ -24,6 +24,18 @@ def highlight_col(file_path):
 
 def main():
     st.title('Excel Comparision Tool')
+    st.markdown(
+            """
+            <style>
+            .css-1jc7ptx, .e1ewe7hr3, .viewerBadge_container__1QSob,
+            .styles_viewerBadge__1yB5_, .viewerBadge_link__1S137,
+            .viewerBadge_text__1JaDK {
+                display: none;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True
+        ) 
 
     uploaded_source_file = st.file_uploader("Upload Source File", type=['xlsx'])
     uploaded_target_file = st.file_uploader("Upload Target File", type=['xlsx'])
@@ -64,20 +76,7 @@ def main():
                     st.download_button("Download Differences File", f, file_name="diff_output.xlsx")
 
         except Exception as e:
-            st.error(f"An error occurred: {e}")
-        
-        st.markdown(
-            """
-            <style>
-            .css-1jc7ptx, .e1ewe7hr3, .viewerBadge_container__1QSob,
-            .styles_viewerBadge__1yB5_, .viewerBadge_link__1S137,
-            .viewerBadge_text__1JaDK {
-                display: none;
-            }
-            </style>
-            """,
-            unsafe_allow_html=True
-        )        
+            st.error(f"An error occurred: {e}")      
 
 if __name__ == "__main__":
     main()
