@@ -34,8 +34,7 @@ def main():
             }
             </style>
             """,
-            unsafe_allow_html=True
-        ) 
+            unsafe_allow_html=True) 
 
     uploaded_source_file = st.file_uploader("Upload Source File", type=['xlsx'])
     uploaded_target_file = st.file_uploader("Upload Target File", type=['xlsx'])
