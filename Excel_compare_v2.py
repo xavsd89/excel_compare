@@ -23,7 +23,7 @@ def highlight_col(file_path):
     wb.save(file_path)
 
 def main():
-    st.title('Logistics Data Comparison Tool')
+    st.title('Excel Comparision Tool V2')
 
     uploaded_source_file = st.file_uploader("Upload Source File", type=['xlsx'])
     uploaded_target_file = st.file_uploader("Upload Target File", type=['xlsx'])
