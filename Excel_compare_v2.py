@@ -5,25 +5,20 @@ from openpyxl.styles import PatternFill
 import streamlit as st
 import tempfile
 
-def extract_and_merge_columns(old_file, new_file, old_cols, new_cols):
-    """
-    Extracts specific columns from two Excel files, merges them into a new dataset, and saves it to a file.
+def extract_and_merge_columns(old_file, new_file, old_keys, new_keys, old_cols, new_cols):
+    # Concatenate primary keys to create unique identifiers
+    old_file['UniqueKey'] = old_file[old_keys].astype(str).agg('_'.join, axis=1)
+    new_file['UniqueKey'] = new_file[new_keys].astype(str).agg('_'.join, axis=1)
 
-    Parameters:
-    - old_file (pd.DataFrame): DataFrame loaded from the old Excel file.
-    - new_file (pd.DataFrame): DataFrame loaded from the new Excel file.
-    - old_cols (list): List of column names to extract from the old file.
-    - new_cols (list): List of column names to extract from the new file.
-
-    Returns:
-    - str: Path to the output Excel file containing the merged columns.
-    """
     # Extract specified columns from old and new files
-    old_data = old_file[old_cols]
-    new_data = new_file[new_cols]
+    old_data = old_file[['UniqueKey'] + old_cols]
+    new_data = new_file[['UniqueKey'] + new_cols]
 
-    # Merge the extracted columns (assuming we are merging based on a common key, e.g., 'ID')
-    merged_data = pd.merge(old_data, new_data, left_index=True, right_index=True, suffixes=('_old', '_new'))
+    # Perform a VLOOKUP-like merge based on the unique identifiers
+    merged_data = pd.merge(old_data, new_data, on='UniqueKey', how='left')
+
+    # Drop duplicate rows based on the UniqueKey column
+    merged_data = merged_data.drop_duplicates(subset='UniqueKey')
 
     # Create a temporary file to save the merged data
     with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as temp_file:
@@ -35,12 +30,6 @@ def extract_and_merge_columns(old_file, new_file, old_cols, new_cols):
     return merged_file_path
 
 def highlight_col(file_path):
-    """
-    Highlights cells in the 'Differences' sheet of an Excel file based on differences between source and target files.
-
-    Parameters:
-    - file_path (str): The path to the Excel file to be processed.
-    """
     wb = load_workbook(file_path)
     ws_diff = wb['Differences']
 
@@ -83,7 +72,9 @@ def main():
     old_file_upload = st.file_uploader("Upload Excel A for merging", type=['xlsx'], key='old')
     new_file_upload = st.file_uploader("Upload Excel B for merging", type=['xlsx'], key='new')
 
-    # Specify the columns to extract from the old and new files
+    # Specify the primary keys and columns to extract
+    old_keys = st.text_input("Enter Primary Key Column names for Excel A, separated by commas", "PrimaryKeyA1,PrimaryKeyA2")
+    new_keys = st.text_input("Enter Primary Key Column names for Excel B, separated by commas", "PrimaryKeyB1,PrimaryKeyB2")
     old_columns = st.text_input("Enter Column names to extract from Excel A, separated by commas", "Column1,Column2..etc")
     new_columns = st.text_input("Enter Column names to extract from Excel B, separated by commas", "Column1,Column2..etc")
 
@@ -93,10 +84,13 @@ def main():
                 old_file = pd.read_excel(old_file_upload)
                 new_file = pd.read_excel(new_file_upload)
 
+                # Convert input columns to lists
+                old_keys_list = [key.strip() for key in old_keys.split(',')]
+                new_keys_list = [key.strip() for key in new_keys.split(',')]
                 old_cols = [col.strip() for col in old_columns.split(',')]
                 new_cols = [col.strip() for col in new_columns.split(',')]
 
-                merged_file_path = extract_and_merge_columns(old_file, new_file, old_cols, new_cols)
+                merged_file_path = extract_and_merge_columns(old_file, new_file, old_keys_list, new_keys_list, old_cols, new_cols)
 
                 st.write("Merged columns have been successfully extracted and merged.")
                 with open(merged_file_path, "rb") as f:
