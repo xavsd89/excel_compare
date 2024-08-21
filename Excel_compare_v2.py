@@ -73,10 +73,10 @@ def main():
     new_file_upload = st.file_uploader("Upload Excel B for merging", type=['xlsx'], key='new')
 
     # Specify the primary keys and columns to extract
-    old_keys = st.text_input("Enter Primary Key Column names for Excel A, separated by commas", "PrimaryKeyA1,PrimaryKeyA2")
-    new_keys = st.text_input("Enter Primary Key Column names for Excel B, separated by commas", "PrimaryKeyB1,PrimaryKeyB2")
-    old_columns = st.text_input("Enter Column names to extract from Excel A, separated by commas", "Column1,Column2..etc")
-    new_columns = st.text_input("Enter Column names to extract from Excel B, separated by commas", "Column1,Column2..etc")
+    old_keys = st.text_input("Unique Key - Enter Primary Key Column names for Excel A (separated by commas & no space)", "PrimaryKeyA1,PrimaryKeyA2")
+    new_keys = st.text_input("Unique Key - Enter Primary Key Column names for Excel B (separated by commas & no space)", "PrimaryKeyB1,PrimaryKeyB2")
+    old_columns = st.text_input("Enter Column names (include primary keys) to extract from Excel A (separated by commas & no space)", "Column1,Column2..etc")
+    new_columns = st.text_input("Enter Column names to extract from Excel B (separated by commas & no space)", "Column1,Column2..etc")
 
     if st.button("Extract and Merge Columns"):
         if old_file_upload and new_file_upload:
@@ -105,8 +105,8 @@ def main():
             st.error("Please upload both Excel files.")
 
     # File upload widgets for the source and target files for comparison
-    uploaded_source_file = st.file_uploader("Upload SOURCE File for Comparison", type=['xlsx'], key='source')
-    uploaded_target_file = st.file_uploader("Upload TARGET File for Comparison", type=['xlsx'], key='target')
+    uploaded_source_file = st.file_uploader("Upload SOURCE File for comparison (both files must be same format & same no. of columns)", type=['xlsx'], key='source')
+    uploaded_target_file = st.file_uploader("Upload TARGET File for comparison (both files must be same format & same no. of columns)", type=['xlsx'], key='target')
 
     if st.button("Compare Excel Files"):
         if uploaded_source_file and uploaded_target_file:
