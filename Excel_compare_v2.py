@@ -69,8 +69,8 @@ def main():
     st.title('Excel Compare & Merge Tool (v3)')
 
     # Upload widgets for the old and new Excel files for column extraction
-    old_file_upload = st.file_uploader("Upload Excel A for merging", type=['xlsx'], key='old')
-    new_file_upload = st.file_uploader("Upload Excel B for merging", type=['xlsx'], key='new')
+    old_file_upload = st.file_uploader("Upload Excel A for merging (both files must have the same primary keys)", type=['xlsx'], key='old')
+    new_file_upload = st.file_uploader("Upload Excel B for merging (both files must have the same primary keys)", type=['xlsx'], key='new')
 
     # Specify the primary keys and columns to extract
     old_keys = st.text_input("Unique Key - Enter Primary Key Column names for Excel A (separated by commas & no space)", "PrimaryKeyA1,PrimaryKeyA2")
