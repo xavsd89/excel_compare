@@ -5,37 +5,6 @@ from openpyxl.styles import PatternFill
 import streamlit as st
 import tempfile
 
-def extract_and_merge_columns(old_file, new_file, old_keys, new_keys, old_cols, new_cols):
-    """
-    Extracts specified columns from two Excel files and merges them based on unique keys.
-    """
-
-    # Create a unique key in the old file by concatenating values of specified columns
-    old_file['UniqueKey'] = old_file[old_keys].astype(str).agg('_'.join, axis=1)
-    # Create a unique key in the new file by concatenating values of specified columns
-    new_file['UniqueKey'] = new_file[new_keys].astype(str).agg('_'.join, axis=1)
-
-    # Extract only the unique key and specified columns from the old file
-    old_data = old_file[['UniqueKey'] + old_cols]
-    # Extract only the unique key and specified columns from the new file
-    new_data = new_file[['UniqueKey'] + new_cols]
-
-    # Merge the old and new data on the unique key, keeping only matching rows
-    merged_data = pd.merge(old_data, new_data, on='UniqueKey', how='inner')
-
-    # Remove any duplicate rows based on the unique key
-    merged_data = merged_data.drop_duplicates(subset='UniqueKey')
-
-    # Create a temporary file to save the merged data
-    with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as temp_file:
-        merged_file_path = temp_file.name
-
-    # Write the merged data to the temporary Excel file
-    with pd.ExcelWriter(merged_file_path, engine='openpyxl') as writer:
-        merged_data.to_excel(writer, sheet_name='Merged', index=False)
-
-    return merged_file_path
-
 def highlight_col(file_path):
     """
     Highlights differences in an Excel file based on merge status.
@@ -51,6 +20,10 @@ def highlight_col(file_path):
     pink_fill = PatternFill(start_color='FFC0CB', end_color='FFC0CB', fill_type='solid')
     red_fill = PatternFill(start_color='FF0000', end_color='FF0000', fill_type='solid')
 
+    # Convert ws_diff.columns to a list to safely use len()
+    columns = list(ws_diff.columns)
+    num_cols = len(columns) - 1  # excluding the last column (merge status)
+
     # Iterate over rows in the 'Differences' sheet, starting from the second row
     for row in ws_diff.iter_rows(min_row=2, max_col=ws_diff.max_column):
         # Get the merge status from the last column of the row
@@ -62,9 +35,6 @@ def highlight_col(file_path):
                 cell.fill = yellow_fill
             elif merge_output == 'Target Only':
                 cell.fill = pink_fill
-
-    # Calculate the number of columns excluding the last column (merge status)
-    num_cols = len(ws_diff.columns) - 1
 
     # Iterate over rows to compare cell values
     for row in ws_diff.iter_rows(min_row=2, max_col=num_cols):
@@ -88,54 +58,23 @@ def main():
     """
     Main function to run the Streamlit application for comparing and merging Excel files.
     """
-    # Set the title of the Streamlit app
-    st.title('Excel Compare & Merge Tool (v3)')
+    
+    # Display functional steps at the top for user guidance
+    st.title('Excel Compare Tool')
+    st.subheader("How it Works:")
+    st.write("""
+    1. **Upload the Files**: Upload the two Excel files you want to compare.
+    2. **Compare the Files**: Click on "Compare Excel Files" to see differences between the two files.
+    3. **Download the Results**: Download the resulting Excel file that has generated a 'Differences' tab showing the differences highlighted.
+    4. **Color Coding**: 
+        - Yellow: Data rows that only exists in the SOURCE file (1st excel).
+        - Pink: Data rows that only exists in the TARGET file (2nd excel).
+        - Red: Data rows that exists in both files but some Data Attributes has difference between the two files.
+    """)
 
-    # Create file uploader widgets for old and new Excel files for merging
-    old_file_upload = st.file_uploader("Upload Excel A for merging (both files must have the same primary keys)", type=['xlsx'], key='old')
-    new_file_upload = st.file_uploader("Upload Excel B for merging (both files must have the same primary keys)", type=['xlsx'], key='new')
-
-    # Input fields for primary key columns and columns to extract
-    old_keys = st.text_input("Unique Key - Enter Primary Key Column names for Excel A (separated by commas & no space)", "PrimaryKeyA1,PrimaryKeyA2")
-    new_keys = st.text_input("Unique Key - Enter Primary Key Column names for Excel B (separated by commas & no space)", "PrimaryKeyB1,PrimaryKeyB2")
-    old_columns = st.text_input("Enter Column names (include primary keys) to extract from Excel A (separated by commas & no space)", "Column1,Column2..etc")
-    new_columns = st.text_input("Enter Column names to extract from Excel B (separated by commas & no space)", "Column1,Column2..etc")
-
-    # Check if the "Extract and Merge Columns" button is clicked
-    if st.button("Extract and Merge Columns"):
-        if old_file_upload and new_file_upload:
-            try:
-                # Read the uploaded Excel files into DataFrames
-                old_file = pd.read_excel(old_file_upload)
-                new_file = pd.read_excel(new_file_upload)
-
-                # Convert input columns to lists
-                old_keys_list = [key.strip() for key in old_keys.split(',')]
-                new_keys_list = [key.strip() for key in new_keys.split(',')]
-                old_cols = [col.strip() for col in old_columns.split(',')]
-                new_cols = [col.strip() for col in new_columns.split(',')]
-
-                # Extract and merge columns from the old and new files
-                merged_file_path = extract_and_merge_columns(old_file, new_file, old_keys_list, new_keys_list, old_cols, new_cols)
-
-                # Notify the user of successful merge and provide download link
-                st.write("Merged columns have been successfully extracted and merged.")
-                with open(merged_file_path, "rb") as f:
-                    st.download_button("Download Merged File", f, file_name="merged_output.xlsx")
-
-                # Clean up temporary file
-                os.remove(merged_file_path)
-
-            except Exception as e:
-                # Display error message if an exception occurs
-                st.error(f"An error occurred: {e}")
-        else:
-            # Display error message if both files are not uploaded
-            st.error("Please upload both Excel files.")
-
-    # Create file uploader widgets for source and target files for comparison
-    uploaded_source_file = st.file_uploader("Upload SOURCE File for comparison (both files must be same format & same no. of columns)", type=['xlsx'], key='source')
-    uploaded_target_file = st.file_uploader("Upload TARGET File for comparison (both files must be same format & same no. of columns)", type=['xlsx'], key='target')
+    # Create file uploader widgets for uploading Excel files for comparison
+    uploaded_source_file = st.file_uploader("Upload SOURCE Excel File for comparison", type=['xlsx'], key='source')
+    uploaded_target_file = st.file_uploader("Upload TARGET Excel File for comparison", type=['xlsx'], key='target')
 
     # Check if the "Compare Excel Files" button is clicked
     if st.button("Compare Excel Files"):
